@@ -6,11 +6,11 @@ use value::{Number, Quotes, Unit};
 
 pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
     def!(f, quote(contents), |s| match s.get("contents") {
-        Value::Literal(v, _) => Ok(Value::Literal(v, Quotes::Double)),
-        v => Ok(Value::Literal(format!("{}", v), Quotes::Double)),
+        Value::Literal(v, ..) => Ok(Value::Literal(v, Quotes::Double, true)),
+        v => Ok(Value::Literal(format!("{}", v), Quotes::Double, true)),
     });
     def!(f, unquote(contents), |s| match s.get("contents") {
-        Value::Literal(v, _) => Ok(Value::Literal(v, Quotes::None)),
+        Value::Literal(v, ..) => Ok(Value::Literal(v, Quotes::None, true)),
         v => {
             dep_warn!("Passing {}, a non-string value, to unquote()", v);
             Ok(v)
@@ -19,8 +19,8 @@ pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
     def!(f, str_insert(string, insert, index), |s| {
         match (s.get("string"), s.get("insert"), s.get("index")) {
             (
-                Value::Literal(s, q),
-                Value::Literal(insert, _),
+                Value::Literal(s, q, _),
+                Value::Literal(insert, ..),
                 Value::Numeric(index, Unit::None, ..),
             ) => {
                 let i = index_to_rust(&index, &s);
@@ -33,6 +33,7 @@ pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
                         s.collect::<String>()
                     ),
                     q,
+                    true,
                 ))
             }
             (s, i, v) => Err(Error::badargs(
@@ -47,7 +48,7 @@ pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
         s.get("end_at")
     ) {
         (
-            Value::Literal(s, q),
+            Value::Literal(s, q, _),
             Value::Numeric(start_at, Unit::None, ..),
             Value::Numeric(end_at, Unit::None, ..),
         ) => {
@@ -59,6 +60,7 @@ pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
                     .take(end_at + 1 - start_at)
                     .collect::<String>(),
                 q,
+                true,
             ))
         }
         (v, s, e) => Err(Error::badargs(
@@ -67,12 +69,12 @@ pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
         )),
     });
     def!(f, str_length(string), |s| match &s.get("string") {
-        &Value::Literal(ref v, _) => Ok(intvalue(v.chars().count())),
+        &Value::Literal(ref v, ..) => Ok(intvalue(v.chars().count())),
         v => Err(Error::badarg("string", v)),
     });
     def!(f, str_index(string, substring), |s| {
         match (s.get("string"), s.get("substring")) {
-            (Value::Literal(s, _), Value::Literal(sub, _)) => {
+            (Value::Literal(s, ..), Value::Literal(sub, ..)) => {
                 Ok(match s.find(&sub) {
                     Some(o) => intvalue(1 + s[0..o].chars().count()),
                     None => Value::Null,
@@ -84,11 +86,15 @@ pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
         }
     });
     def!(f, to_upper_case(string), |s| match s.get("string") {
-        Value::Literal(v, q) => Ok(Value::Literal(v.to_uppercase(), q)),
+        Value::Literal(v, q, _) => {
+            Ok(Value::Literal(v.to_uppercase(), q, true))
+        }
         v => Ok(v),
     });
     def!(f, to_lower_case(string), |s| match s.get("string") {
-        Value::Literal(v, q) => Ok(Value::Literal(v.to_lowercase(), q)),
+        Value::Literal(v, q, _) => {
+            Ok(Value::Literal(v.to_lowercase(), q, true))
+        }
         v => Ok(v),
     });
 }

@@ -49,8 +49,9 @@ impl Selectors {
                 Value::List(
                     format!("{}", s)
                         .split_whitespace()
-                        .map(|p| Value::Literal(p.to_string(), Quotes::None))
-                        .collect(),
+                        .map(|p| {
+                            Value::Literal(p.to_string(), Quotes::None, true)
+                        }).collect(),
                     ListSeparator::Space,
                     false,
                 )

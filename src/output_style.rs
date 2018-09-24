@@ -62,7 +62,7 @@ impl OutputStyle {
         match *item {
             Item::Import(ref name) => {
                 let name = name.evaluate(scope).unquote();
-                if let Value::Literal(ref x, _) = name {
+                if let Value::Literal(ref x, ..) = name {
                     if let Some((sub_context, file)) =
                         file_context.find_file(x.as_ref())
                     {
@@ -347,7 +347,7 @@ impl OutputStyle {
             match *b {
                 Item::Import(ref name) => {
                     let name = name.evaluate(scope);
-                    if let Value::Literal(ref x, _) = name {
+                    if let Value::Literal(ref x, ..) = name {
                         let (sub_context, file) =
                             file_context.file(x.as_ref());
                         let items = parse_scss_file(&file)?;

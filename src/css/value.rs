@@ -7,7 +7,7 @@ use std::fmt::{self, Write};
 use value::{ListSeparator, Number, Operator, Quotes, Rgba, Unit};
 
 /// A sass value.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Eq, PartialOrd, Ord)]
 pub enum Value {
     /// A special kind of escape.  Only really used for !important.
     Bang(String),
@@ -15,7 +15,8 @@ pub enum Value {
     Call(String, CallArgs),
     /// A (callable?) function.
     Function(String, Option<SassFunction>),
-    Literal(String, Quotes),
+    /// A literal string with any quoting may or may not be calculated.
+    Literal(String, Quotes, bool),
     /// A comma- or space separated list of values, with or without brackets.
     List(Vec<Value>, ListSeparator, bool),
     /// A Numeric value is a rational value with a Unit (which may be
@@ -36,6 +37,56 @@ pub enum Value {
     /// A unicode range for font selections. U+NN, U+N?, U+NN-MM.
     /// The string is the entire value, including the "U+" tag.
     UnicodeRange(String),
+}
+
+// Implement PartialEq manually instead of deriving it, so a calculated
+// value can be considered equal to the same, uncalculated, value
+impl PartialEq for Value {
+    fn eq(&self, rhs: &Self) -> bool {
+        match (self, rhs) {
+            (&Value::Bang(ref s1), &Value::Bang(ref s2)) => s1 == s2,
+            (&Value::Call(ref n1, ref a1), &Value::Call(ref n2, ref a2)) => {
+                n1 == n2 && a1 == a2
+            }
+            (
+                &Value::Function(ref n1, ref f1),
+                &Value::Function(ref n2, ref f2),
+            ) => n1 == n2 && f1 == f2,
+            // The point of manual implementation: ignore the calcualted flag!
+            (
+                &Value::Literal(ref s1, ref q1, _),
+                &Value::Literal(ref s2, ref q2, _),
+            ) => s1 == s2 && q1 == q2,
+            (
+                &Value::List(ref v1, ref s1, ref b1),
+                &Value::List(ref v2, ref s2, ref b2),
+            ) => v1 == v2 && s1 == s2 && b1 == b2,
+            (
+                &Value::Numeric(ref n1, ref u1, _),
+                &Value::Numeric(ref n2, ref u2, _),
+            ) => n1 == n2 && u1 == u2,
+            (
+                &Value::Color(ref c1, ref n1),
+                &Value::Color(ref c2, ref n2),
+            ) => c1 == c2 && n1 == n2,
+            (&Value::Null, &Value::Null)
+            | (&Value::True, &Value::True)
+            | (&Value::False, &Value::False) => true,
+            (
+                &Value::BinOp(ref a1, ref s11, ref o1, ref s21, ref b1),
+                &Value::BinOp(ref a2, ref s12, ref o2, ref s22, ref b2),
+            ) => a1 == a2 && s11 == s12 && o1 == o2 && s21 == s22 && b1 == b2,
+            (
+                &Value::UnaryOp(ref o1, ref v1),
+                &Value::UnaryOp(ref o2, ref v2),
+            ) => o1 == o2 && v1 == v2,
+            (&Value::Map(ref m1), &Value::Map(ref m2)) => m1 == m2,
+            (&Value::UnicodeRange(ref u1), &Value::UnicodeRange(ref u2)) => {
+                u1 == u2
+            }
+            _ => false,
+        }
+    }
 }
 
 impl Value {
@@ -76,6 +127,9 @@ impl Value {
         match *self {
             Value::Numeric(.., calculated) => calculated,
             Value::Color(_, None) => true,
+            Value::Literal(.., calculated) => calculated,
+            Value::True => true,
+            //Value::False => true,
             _ => false,
         }
     }
@@ -121,10 +175,10 @@ impl Value {
 
     pub fn unquote(self) -> Value {
         match self {
-            Value::Literal(s, Quotes::None) => {
-                Value::Literal(s, Quotes::None)
+            Value::Literal(s, Quotes::None, _) => {
+                Value::Literal(s, Quotes::None, true)
             }
-            Value::Literal(s, _) => {
+            Value::Literal(s, ..) => {
                 let mut result = String::new();
                 let mut iter = s.chars();
                 while let Some(c) = iter.next() {
@@ -147,7 +201,7 @@ impl Value {
                         result.push(c)
                     }
                 }
-                Value::Literal(result, Quotes::None)
+                Value::Literal(result, Quotes::None, true)
             }
             Value::List(list, s, b) => Value::List(
                 list.into_iter().map(|v| v.unquote()).collect(),
@@ -159,10 +213,10 @@ impl Value {
     }
     pub fn unrequote(&self) -> Value {
         match *self {
-            Value::Literal(ref s, Quotes::None) => {
-                Value::Literal(s.clone(), Quotes::None)
+            Value::Literal(ref s, Quotes::None, _) => {
+                Value::Literal(s.clone(), Quotes::None, true)
             }
-            Value::Literal(ref s, _) => {
+            Value::Literal(ref s, ..) => {
                 let mut result = String::new();
                 let mut iter = s.chars();
                 while let Some(c) = iter.next() {
@@ -188,9 +242,9 @@ impl Value {
                     }
                 }
                 if result.contains('"') && !result.contains('\'') {
-                    Value::Literal(result, Quotes::Single)
+                    Value::Literal(result, Quotes::Single, true)
                 } else {
-                    Value::Literal(result, Quotes::Double)
+                    Value::Literal(result, Quotes::Double, true)
                 }
             }
             Value::List(ref list, ref s, ref b) => Value::List(
@@ -223,7 +277,7 @@ impl fmt::Display for Value {
     fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Value::Bang(ref s) => write!(out, "!{}", s),
-            Value::Literal(ref s, ref q) => match *q {
+            Value::Literal(ref s, ref q, _) => match *q {
                 Quotes::Double => write!(
                     out,
                     "\"{}\"",

@@ -57,7 +57,6 @@ fn handle_suites() -> Result<(), Error> {
             "base-level-parent/nested/at-root-prefix-itpl",
             "base-level-parent/root/at-root-postfix-itpl",
             "base-level-parent/root/at-root-prefix-itpl",
-            "bool",
             "bourbon",
             "calc",
             "charset",

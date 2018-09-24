@@ -79,9 +79,9 @@ named!(
                 a,
                 |a, (op, b)| Value::BinOp(
                     Box::new(a),
-                    false,
+                    true,
                     op,
-                    false,
+                    true,
                     Box::new(b)
                 )
             )

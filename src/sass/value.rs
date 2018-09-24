@@ -102,7 +102,8 @@ impl Value {
                 if s == "" && q == Quotes::None {
                     css::Value::Null
                 } else {
-                    css::Value::Literal(s, q)
+                    // TODO Is a value calculated if there was evaluations?
+                    css::Value::Literal(s, q, false)
                 }
             }
             Value::Paren(ref v) => v.do_evaluate(scope, true),
@@ -159,19 +160,39 @@ impl Value {
             Value::True => css::Value::True,
             Value::False => css::Value::False,
             Value::BinOp(ref a, s1, ref op, s2, ref b) => {
-                let (a, b) = {
-                    let arithmetic = arithmetic | (*op != Operator::Div);
+                let (arithmetic, a, b) = {
+                    let arithmetic = arithmetic
+                        || (*op != Operator::Div
+                            && *op != Operator::And
+                            && *op != Operator::Or);
+
                     let aa = a.do_evaluate(scope, arithmetic);
                     let b = b
                         .do_evaluate(scope, arithmetic || aa.is_calculated());
                     if !arithmetic && b.is_calculated() && !aa.is_calculated()
                     {
-                        (a.do_evaluate(scope, true), b)
+                        (true, a.do_evaluate(scope, true), b)
                     } else {
-                        (aa, b)
+                        (
+                            arithmetic
+                                || aa.is_calculated()
+                                || b.is_calculated(),
+                            aa,
+                            b,
+                        )
                     }
                 };
-                op.eval(a.clone(), b.clone()).unwrap_or_else(|| {
+                if arithmetic {
+                    op.eval(a.clone(), b.clone()).unwrap_or_else(|| {
+                        css::Value::BinOp(
+                            Box::new(a),
+                            s1,
+                            op.clone(),
+                            s2,
+                            Box::new(b),
+                        )
+                    })
+                } else {
                     css::Value::BinOp(
                         Box::new(a),
                         s1,
@@ -179,7 +200,7 @@ impl Value {
                         s2,
                         Box::new(b),
                     )
-                })
+                }
             }
             Value::UnaryOp(ref op, ref v) => {
                 let value = v.do_evaluate(scope, true);

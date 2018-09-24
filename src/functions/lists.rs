@@ -44,17 +44,17 @@ pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
             let (mut list1, sep1, bra1) = get_list(s.get("list1"));
             let (mut list2, sep2, _bra2) = get_list(s.get("list2"));
             let separator = match s.get("separator") {
-                Value::Literal(ref sep, _)
+                Value::Literal(ref sep, ..)
                     if sep.to_lowercase() == "comma" =>
                 {
                     ListSeparator::Comma
                 }
-                Value::Literal(ref sep, _)
+                Value::Literal(ref sep, ..)
                     if sep.to_lowercase() == "space" =>
                 {
                     ListSeparator::Space
                 }
-                Value::Literal(ref sep, _)
+                Value::Literal(ref sep, ..)
                     if sep.to_lowercase() == "auto" =>
                 {
                     sep1.or(sep2).unwrap_or(ListSeparator::Space)
@@ -68,7 +68,7 @@ pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
             };
             list1.append(&mut list2);
             let bra = match s.get("bracketed") {
-                Value::Literal(ref s, _) if s == "auto" => bra1,
+                Value::Literal(ref s, ..) if s == "auto" => bra1,
                 b => b.is_true(),
             };
             Ok(Value::List(list1, separator, bra))
@@ -77,10 +77,10 @@ pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
     def!(f, append(list, val, separator), |s| {
         let (mut list, sep, bra) = get_list(s.get("list"));
         let sep = match (s.get("separator"), sep) {
-            (Value::Literal(ref s, _), _) if s == "comma" => {
+            (Value::Literal(ref s, ..), _) if s == "comma" => {
                 ListSeparator::Comma
             }
-            (Value::Literal(ref s, _), _) if s == "space" => {
+            (Value::Literal(ref s, ..), _) if s == "space" => {
                 ListSeparator::Space
             }
             (_, s) => s.unwrap_or(ListSeparator::Space),
@@ -130,7 +130,8 @@ pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
             Value::List(_, ListSeparator::Comma, _) => "comma",
             _ => "space",
         }.into(),
-        Quotes::None
+        Quotes::None,
+        true,
     )));
     def!(f, is_bracketed(list), |s| Ok(match s.get("list") {
         Value::List(_, _, true) => Value::True,

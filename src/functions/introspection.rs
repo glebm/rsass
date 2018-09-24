@@ -22,30 +22,32 @@ static IMPLEMENTED_FEATURES: &[&'static str] = &[
 
 pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
     def!(f, feature_exists(name), |s| match &s.get("name") {
-        &Value::Literal(ref v, _) => {
+        &Value::Literal(ref v, ..) => {
             Ok(Value::bool(IMPLEMENTED_FEATURES.iter().any(|s| s == v)))
         }
         v => Err(Error::badarg("string", v)),
     });
     def!(f, variable_exists(name), |s| match &s.get("name") {
-        &Value::Literal(ref v, _) => Ok(Value::bool(s.get(v) != Value::Null)),
+        &Value::Literal(ref v, ..) => {
+            Ok(Value::bool(s.get(v) != Value::Null))
+        }
         v => Err(Error::badarg("string", v)),
     });
     def!(f, global_variable_exists(name), |s| match &s.get("name") {
-        &Value::Literal(ref v, _) => {
+        &Value::Literal(ref v, ..) => {
             Ok(Value::bool(s.get_global(v) != Value::Null))
         }
         v => Err(Error::badarg("string", v)),
     });
     def!(f, function_exists(name), |s| match &s.get("name") {
-        &Value::Literal(ref v, _) => {
+        &Value::Literal(ref v, ..) => {
             Ok(Value::bool(s.get_function(v).is_some()))
         }
         v => Err(Error::badarg("string", v)),
     });
     def!(f, get_function(name, css = b"false"), |s| {
         match s.get("name") {
-            Value::Literal(ref v, _) => {
+            Value::Literal(ref v, ..) => {
                 if s.get("css").is_true() {
                     Ok(Value::Function(v.to_string(), None))
                 } else if let Some(f) = s.get_function(v) {
@@ -58,7 +60,7 @@ pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
         }
     });
     def!(f, mixin_exists(name), |s| match &s.get("name") {
-        &Value::Literal(ref v, _) => {
+        &Value::Literal(ref v, ..) => {
             Ok(Value::bool(s.get_mixin(&v.replace('-', "_")).is_some()))
         }
         v => Err(Error::badarg("string", v)),
@@ -71,18 +73,20 @@ pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
     });
     def!(f, inspect(value), |s| Ok(Value::Literal(
         format!("{}", s.get("value")),
-        Quotes::None
+        Quotes::None,
+        true,
     )));
     def!(f, type_of(value), |s| Ok(Value::Literal(
         s.get("value").type_name().into(),
-        Quotes::None
+        Quotes::None,
+        true,
     )));
     def!(f, unit(value), |s| {
         let v = match s.get("value") {
             Value::Numeric(_, ref unit, ..) => format!("{}", unit),
             _ => "".into(),
         };
-        Ok(Value::Literal(v, Quotes::Double))
+        Ok(Value::Literal(v, Quotes::Double, true))
     });
     def!(f, unitless(value), |s| match s.get("value") {
         Value::Numeric(_, unit, ..) => Ok(Value::bool(unit == Unit::None)),
@@ -107,7 +111,7 @@ pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
             Value::Function(ref name, ref func) => {
                 (func.clone(), name.clone())
             }
-            Value::Literal(ref name, _) => {
+            Value::Literal(ref name, ..) => {
                 dep_warn!(
                     "Passing a string to call() is deprecated and \
                      will be illegal"

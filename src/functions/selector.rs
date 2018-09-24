@@ -16,10 +16,12 @@ pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
                     .fold(Selectors::root(), |b, e| e.inside(&b)),
             ),
             Quotes::None,
+            true,
         )),
         v => Ok(Value::Literal(
             format!("{}", parse_selectors(v)),
             Quotes::None,
+            true,
         )),
     });
     def_va!(f, selector_append(selectors), |s| {
@@ -39,10 +41,12 @@ pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
                     ),
                 ),
                 Quotes::None,
+                true,
             )),
             v => Ok(Value::Literal(
                 format!("{}", parse_selectors(v)),
                 Quotes::None,
+                true,
             )),
         }
     });

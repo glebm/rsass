@@ -25,7 +25,11 @@ pub enum Operator {
 impl Operator {
     pub fn eval(&self, a: Value, b: Value) -> Option<Value> {
         match *self {
-            Operator::And => Some(Value::bool(a.is_true() && b.is_true())),
+            Operator::And => if a.is_true() {
+                Some(b)
+            } else {
+                Some(Value::bool(false))
+            },
             Operator::Or => if a.is_true() {
                 Some(a)
             } else {
@@ -54,20 +58,30 @@ impl Operator {
                         Some(Value::Literal(
                             format!("{}{}", a, b),
                             Quotes::None,
+                            true,
                         ))
                     }
                 }
-                (Value::Literal(a, Quotes::None), Value::Literal(b, _)) => {
-                    Some(Value::Literal(format!("{}{}", a, b), Quotes::None))
+                (
+                    Value::Literal(a, Quotes::None, _),
+                    Value::Literal(b, ..),
+                ) => Some(Value::Literal(
+                    format!("{}{}", a, b),
+                    Quotes::None,
+                    true,
+                )),
+                (Value::Literal(a, ..), Value::Literal(b, ..)) => {
+                    Some(Value::Literal(
+                        format!("{}{}", a, b),
+                        Quotes::Double,
+                        true,
+                    ))
                 }
-                (Value::Literal(a, _), Value::Literal(b, _)) => Some(
-                    Value::Literal(format!("{}{}", a, b), Quotes::Double),
-                ),
-                (Value::Literal(a, q), b) => {
-                    Some(Value::Literal(format!("{}{}", a, b), q))
+                (Value::Literal(a, q, _), b) => {
+                    Some(Value::Literal(format!("{}{}", a, b), q, true))
                 }
-                (a, Value::Literal(b, q)) => {
-                    Some(Value::Literal(format!("{}{}", a, b), q))
+                (a, Value::Literal(b, q, _)) => {
+                    Some(Value::Literal(format!("{}{}", a, b), q, true))
                 }
                 _ => None,
             },
@@ -126,11 +140,16 @@ impl Operator {
                         Some(Value::Literal(
                             format!("{}*{}", a, b),
                             Quotes::None,
+                            true,
                         ))
                     }
                 } else {
                     // TODO None?
-                    Some(Value::Literal(format!("{}*{}", a, b), Quotes::None))
+                    Some(Value::Literal(
+                        format!("{}*{}", a, b),
+                        Quotes::None,
+                        true,
+                    ))
                 }
             }
             Operator::Div => {
@@ -216,7 +235,7 @@ impl fmt::Display for Operator {
 /// the strict derived version, for unit tests etc.
 fn equal_values(a: &Value, b: &Value) -> bool {
     match (a, b) {
-        (&Value::Literal(ref a, _), &Value::Literal(ref b, _)) => a == b,
+        (&Value::Literal(ref a, ..), &Value::Literal(ref b, ..)) => a == b,
         (a, b) => a == b,
     }
 }

@@ -174,6 +174,7 @@ pub fn register(f: &mut BTreeMap<&'static str, SassFunction>) {
             Ok(Value::Literal(
                 format!("#{:02X}{:02X}{:02X}{:02X}", a, r, g, b),
                 Quotes::None,
+                true,
             ))
         }
         v => Err(Error::badarg("color", &v)),
