@@ -1,8 +1,8 @@
 //! Tests auto-converted from "sass-spec/spec/basic"
-//! version 5717844f, 2019-01-28 20:42:33 -0500.
+//! version 0f59164a, 2019-02-01 17:21:13 -0800.
 //! See <https://github.com/sass/sass-spec> for source material.\n
 //! The following tests are excluded from conversion:
-//! ["14_imports", "15_arithmetic_and_lists", "33_ambiguous_imports"]
+//! ["14_imports", "15_arithmetic_and_lists", "23_basic_value_interpolation-4.0", "33_ambiguous_imports", "53_escaped_quotes"]
 extern crate rsass;
 use rsass::{compile_scss, OutputStyle};
 
@@ -239,7 +239,7 @@ fn t22_colors_with_alpha() {
 
 // Ignoring "23_basic_value_interpolation", end_version is 3.5.
 
-// Ignoring "23_basic_value_interpolation-4.0", start_version is 4.0.
+// Ignoring "23_basic_value_interpolation-4.0", not expected to work yet.
 
 /// From "sass-spec/spec/basic/24_namespace_properties"
 #[test]
@@ -546,7 +546,7 @@ fn t52_interchangeable_hyphens_underscores() {
     );
 }
 
-// Ignoring "53_escaped_quotes", start_version is 3.7.
+// Ignoring "53_escaped_quotes", not expected to work yet.
 
 /// From "sass-spec/spec/basic/54_adjacent_identifiers_with_hyphens"
 #[test]

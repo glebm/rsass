@@ -1,5 +1,5 @@
 //! Tests auto-converted from "sass-spec/spec/scss"
-//! version 5717844f, 2019-01-28 20:42:33 -0500.
+//! version 0f59164a, 2019-02-01 17:21:13 -0800.
 //! See <https://github.com/sass/sass-spec> for source material.\n
 //! The following tests are excluded from conversion:
 //! ["multiline-var", "mixin-content", "huge", "comparable", "composed-args", "ie-functions", "media/interpolated", "media/nesting/merged", "media/nesting/merged_and_retained", "media/nesting/removed", "media/nesting/retained", "media/script_features", "mixin-content-selectors", "negation", "nested-extend", "newlines_in_selectors", "placeholder", "placeholder-with-media", "precision", "simple-inheritance"]
@@ -457,7 +457,17 @@ fn for_in_functions() {
 
 // Ignoring "function-names", end_version is 3.5.
 
-// Ignoring "function-names-4.0", start_version is 4.0.
+/// From "sass-spec/spec/scss/function-names-4.0"
+#[test]
+fn function_names_4_0() {
+    assert_eq!(
+        rsass(
+            "div {\n  color: unquote(\"hello\");\n  color: un#{quo}te(\"hello\");\n  color: (\"hello\")un#{quo}te;\n}\n"
+        )
+        .unwrap(),
+        "div {\n  color: hello;\n  color: unquote(\"hello\");\n  color: \"hello\" unquote;\n}\n"
+    );
+}
 
 /// From "sass-spec/spec/scss/function_args"
 #[test]
@@ -533,7 +543,14 @@ fn hyphen_interpolated() {
     );
 }
 
-// Ignoring "ie-backslash", start_version is 3.7.
+/// From "sass-spec/spec/scss/ie-backslash"
+#[test]
+fn ie_backslash() {
+    assert_eq!(
+        rsass("div {\n  background-color: darken(red, 10%) \\9;\n}").unwrap(),
+        "div {\n  background-color: #cc0000 \\9 ;\n}\n"
+    );
+}
 
 // Ignoring "ie-functions", not expected to work yet.
 
@@ -1231,7 +1248,17 @@ fn while_in_functions() {
 
 // Ignoring "zero-compression", end_version is 3.5.
 
-// Ignoring "zero-compression-4.0", start_version is 4.0.
+/// From "sass-spec/spec/scss/zero-compression-4.0"
+#[test]
+fn zero_compression_4_0() {
+    assert_eq!(
+        rsass(
+            "$orig: 0.12em;\r\n$value: (0.12em);\r\n$score: (item-height: 0.12em);\r\nfoo {\r\n    tst-1: 0 -#{0.12em};\r\n    tst-2: 0 -#{$orig};\r\n    tst-3: 0 -#{$value};\r\n    tst-4: 0 -#{map-get($score, item-height)};\r\n}"
+        )
+        .unwrap(),
+        "foo {\n  tst-1: 0 -0.12em;\n  tst-2: 0 -0.12em;\n  tst-3: 0 -0.12em;\n  tst-4: 0 -0.12em;\n}\n"
+    );
+}
 
 fn rsass(input: &str) -> Result<String, String> {
     compile_scss(input.as_bytes(), OutputStyle::Expanded)

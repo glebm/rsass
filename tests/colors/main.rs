@@ -1,5 +1,5 @@
 //! Tests auto-converted from "sass-spec/spec/colors"
-//! version 5717844f, 2019-01-28 20:42:33 -0500.
+//! version 0f59164a, 2019-02-01 17:21:13 -0800.
 //! See <https://github.com/sass/sass-spec> for source material.\n
 extern crate rsass;
 use rsass::{compile_scss, OutputStyle};
@@ -30,7 +30,17 @@ fn adjust_hue() {
 
 // Ignoring "basic", end_version is 3.5.
 
-// Ignoring "basic-4.0", start_version is 4.0.
+/// From "sass-spec/spec/colors/basic-4.0"
+#[test]
+fn basic_4_0() {
+    assert_eq!(
+        rsass(
+            "p {\n  color: rgb(255, 128, 0);\n  color: red green blue;\n  color: (red) (green) (blue);\n  color: red + hux;\n  color: unquote(\"red\") + green;\n  foo: rgb(200, 150%, 170%);\n}"
+        )
+        .unwrap(),
+        "p {\n  color: #ff8000;\n  color: red green blue;\n  color: red green blue;\n  color: redhux;\n  color: redgreen;\n  foo: #c8ffff;\n}\n"
+    );
+}
 
 /// From "sass-spec/spec/colors/change-color"
 #[test]

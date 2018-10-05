@@ -1,4 +1,3 @@
-use super::util::{is_name_char, take_char};
 use super::value::value_expression;
 use super::{input_to_str, input_to_string};
 use nom::alphanumeric;
@@ -67,14 +66,16 @@ named!(
 named!(
     selector_string<Input, String>,
     fold_many1!(
+        // Note: This could probably be a whole lot more efficient,
+        // but try to get stuff correct before caring too much about that.
         alt_complete!(
-            selector_plain_part
-                | selector_escaped_part
-                | hash_no_interpolation
+            map!(selector_plain_part, String::from) |
+            map!(escaped_char, |c| format!("{}", c)) |
+            map!(hash_no_interpolation, String::from)
         ),
         String::new(),
-        |mut acc: String, item: &str| {
-            acc.push_str(item);
+        |mut acc: String, item: String| {
+            acc.push_str(&item);
             acc
         }
     )
@@ -163,4 +164,65 @@ fn is_ext_str_char(c: char) -> bool {
         || c == '='
         || c == '?'
         || c == '|'
+}
+
+named!(
+    pub name<Input, String>,
+    map_opt!(
+        fold_many0!(
+            alt!(
+                escaped_char |
+                verify!(take_char, is_name_char)
+            ),
+            String::new(),
+            |mut s: String, c: char| { s.push(c); s }
+        ),
+        |s| if s != "" && s != "-" { eprintln!("Parsed name {:?}", s); Some(s) } else { None }
+    )
+);
+
+named!(
+    escaped_char<Input, char>,
+    preceded!(
+        tag!("\\"),
+        alt!(
+            value!('\\', tag!("\\")) |
+            value!('\n', tag!("n")) |
+            value!('\r', tag!("r")) |
+            value!('\t', tag!("t")) |
+            map!(
+                terminated!(
+                    recognize!(many_m_n!(1, 6, one_of!("0123456789ABCDEFabcdef"))),
+                    opt!(tag!(" "))
+                ),
+                |hp| {
+                    use std::char::from_u32;
+                    let ch = from_u32(u32::from_str_radix(input_to_str(hp).unwrap(), 16).unwrap()).unwrap();
+                    eprintln!("Got hexpair {:?}: {:?}", hp, ch);
+                    ch
+                }
+            ) |
+            take_char
+        )
+    )
+);
+
+named!(
+    take_char<Input, char>,
+    alt!(
+        map_opt!(take!(1), single_char) |
+        map_opt!(take!(2), single_char) |
+        map_opt!(take!(3), single_char) |
+        map_opt!(take!(4), single_char) |
+        map_opt!(take!(5), single_char)
+    )
+);
+
+fn single_char(data: Input) -> Option<char> {
+    use std::str::from_utf8;
+    from_utf8(&data).ok().and_then(|s| s.chars().next())
+}
+
+fn is_name_char(c: char) -> bool {
+    c.is_alphanumeric() || c == '_' || c == '-'
 }

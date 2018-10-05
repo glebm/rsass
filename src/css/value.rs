@@ -245,7 +245,34 @@ impl fmt::Display for Value {
                         })
                         .collect::<String>()
                 ),
-                Quotes::None => write!(out, "{}", s),
+                Quotes::None => write!(
+                    out,
+                    "{}",
+                    s.chars()
+                        .enumerate()
+                        .flat_map(|(n, c)| match c {
+                            '"' => vec!['\\', '"'],
+                            '-' if n == 0 => vec!['\\', '-'],
+                            c if c.is_control()
+                                || (c.is_ascii_digit() && n == 0) =>
+                            {
+                                let mut u = c.escape_unicode();
+                                let mut result = vec!['\\'];
+                                assert_eq!(u.next(), Some('\\'));
+                                assert_eq!(u.next(), Some('u'));
+                                assert_eq!(u.next(), Some('{'));
+                                while let Some(digit) = u.next() {
+                                    if digit != '}' {
+                                        result.push(digit);
+                                    }
+                                }
+                                result.push(' ');
+                                result
+                            }
+                            c => vec![c],
+                        })
+                        .collect::<String>()
+                ),
             },
             Value::Function(ref n, ref _f) => {
                 let name = n

@@ -6,6 +6,6 @@ use rsass::precision;
 
 // Ignoring "colon_twice_todo", tests with expected error not implemented yet.
 
-mod double_escape;
+// Ignoring "double_escape", not expected to work yet.
 
 mod todo_single_escape;

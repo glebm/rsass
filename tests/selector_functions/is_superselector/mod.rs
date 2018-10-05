@@ -2,7 +2,7 @@
 #[allow(unused)]
 use super::rsass;
 #[allow(unused)]
-use rsass::set_precision;
+use rsass::precision;
 
 /// From "sass-spec/spec/selector-functions/is_superselector/any_is_not_superselector_of_different_prefix"
 #[test]

@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 /// Sass spec version targeted.
-const VERSION: f32 = 3.6;
+const VERSION: f32 = 4.0;
 
 fn main() -> Result<(), Error> {
     let base = PathBuf::from("sass-spec/spec");
@@ -17,7 +17,9 @@ fn main() -> Result<(), Error> {
         &[
             "14_imports", // Need to handle separate files in tests
             "15_arithmetic_and_lists", // requirements changed
+            "23_basic_value_interpolation-4.0",
             "33_ambiguous_imports", // Need to handle separate files in tests
+            "53_escaped_quotes", // TODO in sass-spec for escaping changes
         ],
     )?;
     handle_suite(&base, "colors", &[])?;
@@ -149,23 +151,26 @@ fn main() -> Result<(), Error> {
         &base,
         "parser",
         &[
+            "interpolate/10_escaped_backslash",
             "interpolate/11_escaped_literal",
             "interpolate/12_escaped_double_quoted/06_escape_interpolation",
             "interpolate/13_escaped_single_quoted/06_escape_interpolation",
             "interpolate/14_escapes_literal_numbers",
-            "interpolate/15_escapes_double_quoted_numbers/06_escape_interpolation",
-            "interpolate/16_escapes_single_quoted_numbers/06_escape_interpolation",
+            "interpolate/15_escapes_double_quoted_numbers",
+            "interpolate/16_escapes_single_quoted_numbers",
             "interpolate/17_escapes_literal_lowercase",
-            "interpolate/18_escapes_double_quoted_lowercase/06_escape_interpolation",
-            "interpolate/19_escapes_single_quoted_lowercase/06_escape_interpolation",
+            "interpolate/18_escapes_double_quoted_lowercase",
+            "interpolate/19_escapes_single_quoted_lowercase",
             "interpolate/20_escapes_literal_uppercase",
-            "interpolate/21_escapes_double_quoted_uppercase/06_escape_interpolation",
-            "interpolate/22_escapes_single_quoted_uppercase/06_escape_interpolation",
+            "interpolate/21_escapes_double_quoted_uppercase",
+            "interpolate/22_escapes_single_quoted_uppercase",
             "interpolate/23_escapes_literal_specials",
-            "interpolate/24_escapes_double_quoted_specials/todo_05_variable_quoted_double-4.0",
-            "interpolate/24_escapes_double_quoted_specials/06_escape_interpolation",
-            "interpolate/25_escapes_single_quoted_specials/todo_05_variable_quoted_double-4.0",
-            "interpolate/25_escapes_single_quoted_specials/06_escape_interpolation",
+            "interpolate/24_escapes_double_quoted_specials",
+            "interpolate/25_escapes_single_quoted_specials",
+            "interpolate/26_escaped_literal_quotes",
+            "interpolate/27_escaped_double_quotes",
+            "interpolate/28_escaped_single_quotes/06_escape_interpolation",
+            "interpolate/44_selector/double_escape",
             "operations/binary-and-unary",
         ],
     )?;
@@ -173,13 +178,10 @@ fn main() -> Result<(), Error> {
         &base,
         "selector-functions",
         &[
-            "extend/nested",
-            "extend/simple",
-            "is_superselector",
-            "parse",
-            "replace",
-            "unify/base",
-            "unify/universal_simple",
+            //"identifiers/escape/normalize",
+            "identifiers/escape/script",
+            "ids",
+            "numbers/units/multiple",
         ],
     )?;
     handle_suite(
@@ -469,6 +471,7 @@ impl From<std::string::FromUtf8Error> for Error {
         Error(format!("utf8 error: {}", e))
     }
 }
+
 impl From<yaml_rust::ScanError> for Error {
     fn from(e: yaml_rust::ScanError) -> Self {
         Error(format!("utf8 error: {}", e))
